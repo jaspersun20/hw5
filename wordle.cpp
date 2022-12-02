@@ -12,15 +12,17 @@ using namespace std;
 // Add prototypes of helper functions here
 void wordleHelper(
 	const std::string& in,
-	const set<string>& floatset,
+	set<string>& floatset,
 	const std::set<std::string>& dict,
 	std::set<std::string>& answers,
 	string& fullword,
+	string temp,
 	size_t k);
 void floatingHelper(
 	const std::string& in,
-	const set<string>& floatset,
-  std::string& newfloating,
+	map< char, size_t > floatingmap,
+	set<string>& floatset,
+ 	std::string& newfloating,
 	string floatword,
 	size_t i);
 
@@ -39,51 +41,82 @@ std::set<std::string> wordle(
 		string fullword;
     size_t i=0;
 		size_t k=0;
-		floatingHelper(in,floatset, newfloating , floatword, i);
-		wordleHelper(in, floatset, dict, answers, fullword, k);
+		map< char, size_t > floatingmap;
+		map<char, size_t>::iterator it;
+		for(size_t c=0; c<floating.length(); c++){
+			it=floatingmap.find(floating[c]);
+			if(it==floatingmap.end()){
+				size_t num = 1;
+				floatingmap[floating[c]]=num;
+			}
+			else{
+				(it->second)++;
+			}
+		}
+		floatingHelper(in, floatingmap,floatset, newfloating, floatword, i);
+		set<string>::iterator it1;
+		// for every word in floating set, fill in letters from alphabet
+		for(it1=floatset.begin(); it1!=floatset.end();++it1){
+			 string fullword = *it1;
+			 string temp;
+			 wordleHelper(in, floatset, dict, answers,fullword, temp, k);
+		}
 		return answers;
 }
 
 void floatingHelper(
 	const std::string& in,
-	 set<string>& floatset,
- std::string& newfloating,
+	map< char, size_t > floatingmap,
+	set<string>& floatset,
+ 	std::string& newfloating,
 	string floatword,
 	size_t i){
 		// base case: if the floating length reaches limit
-		if(floatword.length()==in.length()&&floatword!=in){
+		if(floatword.length()==in.length()){
+			map<char, size_t>::iterator it;
+			map<char, size_t>::iterator it1;
+			for(it=floatingmap.begin(); it!=floatingmap.end();++it){
+				size_t f = floatword.find(it->first);
+				if(f==string::npos){
+					return;
+				}
+				if(it->second>1){
+					if(floatword.find(it->first,f+1)==string::npos){
+						return;
+					}
+				}
+			}
+			// cout << floatword<<endl;
 			floatset.insert(floatword);
+			return;
 		}
 		else{
 			// 
-			if(in[i]!='-'){
+			if(in[i]=='-'){
 				for(size_t j=0; j<newfloating.length(); j++){
-					floatingHelper(in, floatset, newfloating, (floatword+newfloating[j]), i+1);
+					floatingHelper(in, floatingmap, floatset, newfloating, (floatword+newfloating[j]), i+1);
 				}
 			}
 			else{
 				char temp=in[i];
-				floatingHelper(in, floatset, newfloating, (floatword+temp), i+1);
+				floatingHelper(in, floatingmap, floatset, newfloating, (floatword+temp), i+1);
 			}
 		}
 	}
 
 void wordleHelper(
 	const std::string& in,
-	const set<string>& floatset,
+	set<string>& floatset,
 	const std::set<std::string>& dict,
 	std::set<std::string>& answers,
 	string& fullword,
+	string temp,
 	size_t k){
-		// base case
-		set<string>::iterator it;
-		// for every word in floating set, fill in letters from alphabet
-		for(it=floatset.begin(); it!=floatset.end();++it){
-			fullword = *it;
 			// base case
-			if(k==in.length()){
-				if(isValid(fullword, dict)){
-				answers.insert(fullword);
+			if(temp.length()==fullword.length()){
+				// cout << temp<<endl;
+				if(isValid(temp, dict)){		
+				answers.insert(temp);
 				return;
 			}
 			else{
@@ -93,16 +126,14 @@ void wordleHelper(
 			else{
 				if(fullword[k]=='-'){
 					for(int a=97; a<=122; a++){
-						fullword[k]=char(a);
-						wordleHelper(in,floatset, dict, answers, fullword,k+1);
-						fullword[k]=='-';
+						// cout <<"entered main helper"<<endl;
+						wordleHelper(in,floatset, dict, answers,fullword, (temp+char(a)),k+1);
 					}
 				}
 				else{
-					wordleHelper(in,floatset, dict, answers, fullword,k+1);
+					wordleHelper(in,floatset, dict, answers, fullword, (temp+fullword[k]),k+1);
 				}
 			}
-	}
 	}
 
 
